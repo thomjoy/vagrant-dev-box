@@ -51,4 +51,25 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # nat
     vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
   end
+
+  # linode
+  config.vm.provider :linode do |provider, override|
+    override.ssh.private_key_path = '~/.ssh/id_rsa'
+    override.vm.box = 'linode'
+    override.vm.box_url = "https://github.com/displague/vagrant-linode/raw/master/box/linode.box"
+
+    provider.token = 'API_KEY'
+    provider.distribution = 'Ubuntu 14.04 LTS'
+    provider.datacenter = 'tokyo'
+    provider.plan = 'Linode 1024'
+    # provider.planid = <int>
+    # provider.paymentterm = <*1*,12,24>
+    # provider.datacenterid = <int>
+    # provider.image = <string>
+    # provider.imageid = <int>
+    # provider.private_networking = <boolean>
+    # provider.stackscript = <string>
+    # provider.stackscriptid = <int>
+    # provider.distributionid = <int>
+  end
 end
