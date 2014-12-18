@@ -16,6 +16,9 @@ $INSTALL docker.io
 # install apache
 $INSTALL apache2
 
+# install nginx
+$INSTALL nginx
+
 # install node
 curl -sL https://deb.nodesource.com/setup | sudo sh -
 $INSTALL nodejs

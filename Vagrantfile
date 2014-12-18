@@ -46,10 +46,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # virtualbox
   config.vm.provider :virtualbox do |vb|
     # memory
-    vb.customize ["modifyvm", :id, "--name", "benji" , "--memory", "2048"]
-
-    # nat
-    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize [
+      "modifyvm", :id,
+      "--name", "benji",
+      "--memory", "2048",
+      "--natdnshostresolver1", "on",
+      "--cpus", "2",
+      "--ioapic", "on"
+      ]
   end
 
   # linode
