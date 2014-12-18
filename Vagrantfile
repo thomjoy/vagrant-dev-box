@@ -13,6 +13,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # disable the /vagrant synced folder
   config.vm.synced_folder '.', '/vagrant', disabled: true
 
+  # set up /var/www
+  config.vm.synced_folder 'www/', '/var/www'
+
   #network
   config.vm.network :private_network, ip: "192.168.33.10"
 
@@ -29,7 +32,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # provisioning
   config.vm.hostname = "benji"
-  config.vm.provision :shell, path: "provision/setup.sh"
+  #config.vm.provision :shell, path: "provision/setup.sh"
+
+  config.vm.provision :puppet do |puppet|
+     puppet.facter = { "fqdn" => "local.benji", "hostname" => "benji" }
+     puppet.manifests_path = "manifests"
+     puppet.manifest_file  = "base.pp"
+     puppet.module_path = "modules"
+  end
 
   # aws
   #config.vm.provider :aws do |aws, override|
