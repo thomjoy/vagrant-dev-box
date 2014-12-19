@@ -2,9 +2,7 @@ stage { 'first':
   before => Stage['second']
 }
 
-stage { 'second':
-
-}
+stage { 'second': }
 
 class { 'apt-get::update':
   stage  => first,

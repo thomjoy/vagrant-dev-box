@@ -16,6 +16,9 @@ class nginx {
   # Make sure that the nginx service is running
   service { 'nginx':
     ensure => running,
+    enable => true,
+    hasrestart => true,
+    restart => '/etc/init.d/nginx reload',
     require => Package['nginx'],
   }
 
