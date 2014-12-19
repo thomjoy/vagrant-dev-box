@@ -10,12 +10,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.box = "ubuntu/trusty64"
 
-  # disable the /vagrant synced folder
-  config.vm.synced_folder '.', '/vagrant', disabled: true
-
-  # set up /var/www
-  config.vm.synced_folder 'www/', '/var/www'
-
   #network
   config.vm.network :private_network, ip: "192.168.33.10"
 
@@ -32,12 +26,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # provisioning
   config.vm.hostname = "benji"
-  #config.vm.provision :shell, path: "provision/shell/setup.sh"
+  #config.vm.provision :shell, path: "/provision/shell/setup.sh"
 
   config.vm.provision :puppet do |puppet|
      puppet.facter          = { "fqdn" => "local.benji", "hostname" => "benji" }
      puppet.manifests_path  = "provision/puppet/manifests"
-     puppet.manifest_file   = "provision/puppet/base.pp"
+     puppet.manifest_file   = "base.pp"
      puppet.module_path     = "provision/puppet/modules"
   end
 
