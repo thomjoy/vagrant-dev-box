@@ -22,7 +22,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   #shared
-  config.vm.synced_folder "~/code", "/code"
+  config.vm.synced_folder "app", "/vagrant/app"
 
   # provisioning
   config.vm.hostname = "benji"
@@ -56,8 +56,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       "--memory", "2048",
       "--natdnshostresolver1", "on",
       "--cpus", "2",
-      "--ioapic", "on"
-      ]
+      "--ioapic", "on",
+    ]
+
+    # symlinks
+    vb.customize [
+      "setextradata",
+      :id,
+      "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root",
+      "1"
+    ]
   end
 
   # linode
