@@ -61,3 +61,6 @@ include apt-get::update
 include tools
 include nginx
 include nodejs
+
+# proper modules
+include git
