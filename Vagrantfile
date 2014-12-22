@@ -26,12 +26,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # provisioning
   config.vm.hostname = "benji"
-  #config.vm.provision :shell, path: "/provision/shell/setup.sh"
+  config.vm.provision :shell, path: "provision/shell/puppet-bootstrap.sh"
 
   config.vm.provision :puppet do |puppet|
      puppet.facter          = { "fqdn" => "local.benji", "hostname" => "benji" }
      puppet.manifests_path  = "provision/puppet/manifests"
-     puppet.manifest_file   = "base.pp"
+     puppet.manifest_file   = "site.pp"
      puppet.module_path     = "provision/puppet/modules"
   end
 
