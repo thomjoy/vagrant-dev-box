@@ -6,6 +6,15 @@ AWS_AMI    = ENV['AWS_AMI']
 
 VAGRANTFILE_API_VERSION = "2"
 
+hostname = %x[ hostname -f ]
+username = %x[ whoami ]
+
+# might want to set this manually.
+project  = File.basename(File.dirname(__FILE__));
+
+puts "PROJECT = " + project
+
+# Start configuring the box
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.box = "ubuntu/trusty64"
@@ -21,54 +30,67 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vbguest.auto_update = true
   end
 
-  #shared
+  # Set up shared folders.
+  # In real projects this would be probably be set to a folder outside of the vagrant folder
+  # i.e.
+  #  |-- vagrant
+  #      |-- provision
+  #      |-- VagrantFile
+  #  |-- project_name
+  #      |-- src (sync this as "../src")
   config.vm.synced_folder "app", "/vagrant/app"
 
-  # provisioning
-  config.vm.hostname = "benji"
+  # Forward SSH key agent over the 'vagrant ssh' connection
+  config.ssh.forward_agent = true
+
+  # Set the hostname
+  #config.vm.hostname = "web.%s.%s" % [ project, hostname.strip.to_s ]
+  config.vm.hostname = project
+
+  puts "HOSTNAME: %s %s" % [ project, hostname.strip.to_s ]
+
+  # Bootstrap puppet + ruby on the box
   config.vm.provision :shell, path: "provision/shell/puppet-bootstrap.sh"
 
   config.vm.provision :puppet do |puppet|
-     puppet.facter          = { "fqdn" => "local.benji", "hostname" => "benji" }
-     puppet.manifests_path  = "provision/puppet/manifests"
-     puppet.manifest_file   = "site.pp"
-     puppet.module_path     = "provision/puppet/modules"
+      puppet.facter = {
+        "vagrant" => "1",
+        "vagrant_ssh_user" => username.strip.to_s,
+      }
+      puppet.manifests_path   = "provision/puppet/manifests"
+      puppet.manifest_file    = "site.pp"
+      puppet.module_path      = "provision/puppet/modules"
+      puppet.options          = "--hiera_config /server/vagrant/hiera.yaml"
+
+      # Send "notice" to syslog
+      #puppet.options += " --logdest syslog"
+
+      # Enable this to see the details of a puppet run
+      puppet.options += " --verbose --debug"
   end
 
-  # aws
-  #config.vm.provider :aws do |aws, override|
-  #  aws.access_key_id = ENV["AWS_ACCESS_KEY_ID"]
-  #  aws.secret_access_key = ENV["AWS_SECRET_ACCESS_KEY"]
-  #  aws.keypair_name = ENV["AWS_KEYPAIR_NAME"]
-  #  override.ssh.private_key_path = ENV["AWS_SSH_PRIVKEY"]
-  #  override.ssh.username = "ubuntu"
-  #  aws.region = AWS_REGION
-  #  aws.ami    = AWS_AMI
-  #  aws.instance_type = "m1.xlarge"
-  #end
-
-  # virtualbox
-  config.vm.provider :virtualbox do |vb|
-    # memory
-    vb.customize [
+  # Virtualbox
+  config.vm.provider :virtualbox do |vbox|
+    vbox.customize [
       "modifyvm", :id,
       "--name", "benji",
       "--memory", "2048",
-      "--natdnshostresolver1", "on",
       "--cpus", "2",
       "--ioapic", "on",
     ]
 
-    # symlinks
-    vb.customize [
-      "setextradata",
-      :id,
-      "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root",
-      "1"
-    ]
+    # Use VirtualBox's builtin DNS proxy to avoid DNS issues when the
+    # host has a DNS proxy (such as Ubuntu).
+    # See: https://www.virtualbox.org/ticket/10864
+    vbox.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+
+    # Fix symlinks on Mac OSX
+    # see: https://github.com/mitchellh/vagrant/issues/713
+    vbox.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root", "1"]
+    vbox.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/server", "1"]
   end
 
-  # linode
+  # Linode
   config.vm.provider :linode do |provider, override|
     override.ssh.private_key_path = '~/.ssh/id_rsa'
     override.vm.box = 'linode'
