@@ -1,3 +1,10 @@
+stage { 'pre':
+  before => Stage['main'],
+}
+
+stage { 'post': }
+Stage['main'] -> Stage['post']
+
 class { 'apt':
   always_apt_update => true,
 }
@@ -79,6 +86,11 @@ file { '/home/vagrant/.zshrc':
   ensure  => 'present',
   owner   => 'vagrant',
   group   => 'vagrant',
+}
+
+file { '/usr/bin/node':
+  ensure  => 'link',
+  target  => '/usr/bin/nodejs',
 }
 
 exec {
