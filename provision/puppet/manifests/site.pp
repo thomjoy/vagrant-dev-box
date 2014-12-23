@@ -1,32 +1,17 @@
-stage { 'first':
-  before => Stage['second']
-}
-
-stage { 'second': }
-
-class { 'apt-get::update':
-  stage  => first,
-}
-
-class { 'tools':
-  stage => second,
-}
-
-user { 'vagrant':
-  ensure => 'present',
-}
-
-file { '/var/www/':
-  ensure => 'directory',
-}
-
-# Manage packages with apt (required on Debian/Ubuntu systems by
-# manage_package_repo option of postgresql::globals class)
 class { 'apt':
-  always_apt_update   => true,
+  always_apt_update => true,
 }
 
-$postgres_password = 'funkytown'
+exec { 'apt-get-update':
+  command     => '/usr/bin/apt-get update -y',
+  refreshonly => true,
+}
+
+$packages = ['build-essential', 'curl', 'language-pack-en', 'zsh', 'postgis']
+
+package { $packages:
+  ensure => installed,
+}
 
 # Forcibly activate the en_US.UTF-8 locale. Needed to have
 # UTF8 encoding in PostgreSQL databases.
@@ -49,7 +34,12 @@ class { 'postgresql::server':
   listen_addresses           => '*',
   ip_mask_deny_postgres_user => '0.0.0.0/32',
   ip_mask_allow_all_users    => '0.0.0.0/0',
-  postgres_password          => $postgres_password,
+  postgres_password          => 'funkytown',
+} ->
+postgresql::server::role { 'vagrant':
+  createdb      => true,
+  login         => true,
+  password_hash => postgresql_password("vagrant", "vagrant"),
 }
 
 # Install contrib modules
@@ -57,10 +47,48 @@ class { 'postgresql::server::contrib':
   package_ensure => 'present',
 }
 
-include apt-get::update
-include tools
-include nginx
-include nodejs
+# install postgis
+class { 'postgresql::server::postgis':
+  package_ensure => 'present',
+  require => Package['postgis']
+}
+
+# create extension
+exec { "/usr/bin/psql -d template1 -c 'CREATE EXTENSION cube;'":
+  user   => "postgres",
+  unless => "/usr/bin/psql -d template1 -c '\\dx' | grep cube",
+}
+
+## nginx
+nginx::resource::vhost { 'app.local':
+  #www_root => '/var/www/app',
+  proxy         => 'http://127.0.0.1:3002',
+  server_name   => ['app.local'],
+}
+
+# files
+user { 'vagrant':
+  ensure => 'present',
+}
+
+file { '/var/www/':
+  ensure => 'directory',
+}
+
+file { '/home/vagrant/.zshrc':
+  ensure  => 'present',
+  owner   => 'vagrant',
+  group   => 'vagrant',
+}
+
+exec {
+  'set shell':
+    command => "/usr/bin/chsh -s /bin/zsh vagrant",
+    require => Package['zsh'],
+    ;
+}
 
 # proper modules
 include git
+include nodejs
+include nginx
