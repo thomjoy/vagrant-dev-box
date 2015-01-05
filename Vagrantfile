@@ -73,7 +73,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provider :virtualbox do |vbox|
     vbox.customize [
       "modifyvm", :id,
-      "--name", "benji",
       "--memory", "2048",
       "--cpus", "2",
       "--ioapic", "on",
